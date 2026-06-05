@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS - SQLite doesn't support enums, using String instead
+// ============================================================================
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+model User {
+  id                String           @id @default(cuid())
+  email             String           @unique
+  password          String           // Hashed password
+  name              String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  reviews           Review[]
+  savedColleges     SavedCollege[]
+  savedComparisons  SavedComparison[]
+
+  @@index([email])
+}
+
+model College {
+  id                String           @id @default(cuid())
+  name              String
+  location          String
+  description       String
+  establishmentYear Int
+  ranking           Int?
+  rating            Float            @default(0)
+  fees              Int              // Annual fees in INR
+  thumbnail         String?          // URL to college logo/thumbnail
+  website           String?
+  averagePackage    Int?             // Average placement package in INR
+  highestPackage    Int?             // Highest placement package in INR
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  courses           Course[]
+  reviews           Review[]
+  recruiters        Recruiter[]
+  savedColleges     SavedCollege[]
+  comparisonItems   ComparisonItem[]
+
+  @@index([name])
+  @@index([location])
+  @@index([rating])
+  @@index([fees])
+  @@index([ranking])
+}
+
+model Course {
+  id                String           @id @default(cuid())
+  name              String
+  type              String           // CourseType: UNDERGRADUATE, POSTGRADUATE, PHD, DIPLOMA, CERTIFICATE
+  duration          String           // CourseDuration: ONE_YEAR, TWO_YEARS, THREE_YEARS, FOUR_YEARS, FIVE_YEARS
+  fees              Int              // Course fees in INR
+  collegeId         String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  college           College          @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+
+  @@index([collegeId])
+  @@index([type])
+  @@index([name])
+}
+
+model Review {
+  id                String           @id @default(cuid())
+  reviewerName      String
+  rating            Int              // 1-5
+  comment           String
+  collegeId         String
+  userId            String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  college           College          @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  user              User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([collegeId])
+  @@index([userId])
+  @@index([rating])
+}
+
+model Recruiter {
+  id                String           @id @default(cuid())
+  name              String
+  collegeId         String
+  createdAt         DateTime         @default(now())
+
+  // Relations
+  college           College          @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+
+  @@index([collegeId])
+}
+
+model SavedCollege {
+  id                String           @id @default(cuid())
+  userId            String
+  collegeId         String
+  createdAt         DateTime         @default(now())
+
+  // Relations
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college           College          @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, collegeId])
+  @@index([userId])
+  @@index([collegeId])
+}
+
+model SavedComparison {
+  id                String           @id @default(cuid())
+  name              String           // User-defined name for comparison group
+  userId            String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items             ComparisonItem[]
+
+  @@index([userId])
+}
+
+model ComparisonItem {
+  id                String           @id @default(cuid())
+  comparisonId      String
+  collegeId         String
+  createdAt         DateTime         @default(now())
+
+  // Relations
+  comparison        SavedComparison  @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  college           College          @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+
+  @@unique([comparisonId, collegeId])
+  @@index([comparisonId])
+  @@index([collegeId])
+}
+
+model DiscussionQuestion {
+  id          String              @id @default(cuid())
+  title       String
+  body        String
+  authorName  String?            
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  answers     DiscussionAnswer[]  
+}
+
+model DiscussionAnswer {
+  id          String              @id @default(cuid())
+  questionId  String
+  body        String
+  authorName  String?
+  createdAt   DateTime            @default(now())
+
+  question    DiscussionQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
