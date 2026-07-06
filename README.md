@@ -1,4 +1,5 @@
 # College Discovery Platform
+live link - https://collegediscoveryplatformdeployement.vercel.app/
 
 A production-grade full-stack college discovery and comparison platform built with Next.js, PostgreSQL, and modern web technologies.
 
